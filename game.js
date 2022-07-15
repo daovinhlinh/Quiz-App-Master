@@ -14,47 +14,49 @@ let hasChooseAnswer = false;
 let chooseAnswer = [];
 let questions = [];
 
-fetch(
-  "https://opentdb.com/api.php?amount=10&category=9&difficulty=easy&type=multiple"
-)
-  .then((res) => {
-    return res.json();
-  })
-  .then((loadedQuestions) => {
-    questions = loadedQuestions.results.map((loadedQuestion) => {
-      const formattedQuestion = {
-        question: loadedQuestion.question,
-      };
+// fetch(
+//   "https://opentdb.com/api.php?amount=10&category=9&difficulty=easy&type=multiple"
+// )
 
-      const answerChoices = [...loadedQuestion.incorrect_answers];
-      formattedQuestion.answer = Math.floor(Math.random() * 4) + 1;
-      answerChoices.splice(
-        formattedQuestion.answer - 1,
-        0,
-        loadedQuestion.correct_answer
-      );
+const loadQuestion = async () => {
+  const questionData = await fetch("./data.json").then((res) => res.json());
 
-      answerChoices.forEach((choice, index) => {
-        formattedQuestion["choice" + (index + 1)] = choice;
-      });
+  console.log(questionData);
+  questions = questionData.map((loadedQuestion) => {
+    const formattedQuestion = {
+      question: loadedQuestion.question,
+    };
 
-      return formattedQuestion;
-    });
+    // const answerChoices = [...loadedQuestion.incorrect_answers];
+    formattedQuestion.answer = loadedQuestion.answer;
+    // answerChoices.splice(
+    //   formattedQuestion.answer - 1,
+    //   0,
+    //   loadedQuestion.correct_answer
+    // );
 
-    startGame();
-  })
-  .catch((err) => {
-    console.error(err);
+    formattedQuestion.choices = loadedQuestion.choices;
+
+    // answerChoices.forEach((choice, index) => {
+    //   formattedQuestion["choice" + (index + 1)] = choice;
+    // });
+    return formattedQuestion;
   });
+
+  console.log(questions);
+  startGame();
+};
+
+loadQuestion();
 
 //CONSTANTS
 const CORRECT_BONUS = 10;
-const MAX_QUESTIONS = 3;
-
+let MAX_QUESTIONS = 0;
 startGame = () => {
   questionCounter = 0;
   score = 0;
   availableQuesions = [...questions];
+  MAX_QUESTIONS = availableQuesions.length;
   getNewQuestion();
   game.classList.remove("hidden");
   loader.classList.add("hidden");
@@ -75,9 +77,8 @@ getNewQuestion = () => {
   currentQuestion = availableQuesions[questionIndex];
   question.innerHTML = currentQuestion.question;
 
-  choices.forEach((choice) => {
-    const number = choice.dataset["number"];
-    choice.innerHTML = currentQuestion["choice" + number];
+  choices.forEach((choice, index) => {
+    choice.innerHTML = currentQuestion.choices[index];
   });
 
   availableQuesions.splice(questionIndex, 1);
@@ -127,16 +128,24 @@ nextQuestion = () => {
     choices.forEach(
       (choice) => (choice.parentElement.className = "choice-container")
     );
-    //   selectedChoice.parentElement.classList.remove(classToApply);
     getNewQuestion();
   }
+
+  chooseAnswer = [];
 };
 
 checkAnswer = () => {
+  if (chooseAnswer.length > 0) {
     choices.forEach((choice) => {
-         if (choice )
-    })
-}
+      const choiceAnswer = choice.dataset["number"];
+
+      const classToApply = currentQuestion.answer.includes(choiceAnswer)
+        ? "correct"
+        : "incorrect";
+      choice.parentElement.classList.add(classToApply);
+    });
+  }
+};
 
 incrementScore = (num) => {
   score += num;
